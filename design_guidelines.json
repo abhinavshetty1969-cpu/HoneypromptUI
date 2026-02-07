@@ -1,0 +1,149 @@
+{
+  "project_name": "HoneyPrompt",
+  "design_philosophy": {
+    "theme_name": "The Cyber-Panopticon",
+    "emotional_tone": "Secure, Omniscient, Technical, Alert",
+    "visual_style": "High-contrast Dark Mode, dense data grids, neon accents on deep matte backgrounds",
+    "core_principles": [
+      "Information Density: Minimize whitespace in data tables, maximize visibility.",
+      "Status is Color: Color is used ONLY for status (Green=Safe, Red=Attack, Amber=Warn). Decoration is monochrome.",
+      "The Glass Wall: Use subtle glassmorphism to separate layers, but keep it 'military grade' (low blur, high border contrast)."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Chivo, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scaling": {
+      "h1": "text-4xl font-bold tracking-tight lg:text-5xl",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "body": "text-sm leading-relaxed",
+      "mono_sm": "text-xs font-mono text-muted-foreground",
+      "mono_md": "text-sm font-mono"
+    },
+    "usage_rules": [
+      "Use 'JetBrains Mono' for all IP addresses, logs, prompts, and hash IDs.",
+      "Headings must be 'Chivo'. If unavailable, use system sans-serif but bold.",
+      "All labels in charts/tables must be uppercase and tracked-wide (tracking-wider)."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "background": "#09090b",
+      "foreground": "#f8fafc",
+      "card": "#020617",
+      "card_foreground": "#f8fafc",
+      "primary": "#06b6d4",
+      "primary_foreground": "#000000",
+      "secondary": "#1e293b",
+      "secondary_foreground": "#f8fafc",
+      "muted": "#0f172a",
+      "muted_foreground": "#94a3b8",
+      "accent": "#0f172a",
+      "accent_foreground": "#f8fafc",
+      "destructive": "#ef4444",
+      "destructive_foreground": "#f8fafc",
+      "border": "#1e293b",
+      "input": "#1e293b",
+      "ring": "#06b6d4"
+    },
+    "semantic_map": {
+      "success": "#10b981",
+      "warning": "#f59e0b",
+      "danger": "#ef4444",
+      "info": "#3b82f6",
+      "honeypot_active": "#d946ef"
+    },
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at center, rgba(6,182,212,0.15) 0%, rgba(9,9,11,0) 70%)",
+      "danger_glow": "radial-gradient(circle at center, rgba(239,68,68,0.15) 0%, rgba(9,9,11,0) 70%)"
+    }
+  },
+  "layout_and_grid": {
+    "spacing_system": {
+      "container_padding": "p-6 md:p-8",
+      "section_gap": "gap-6",
+      "widget_gap": "gap-4"
+    },
+    "border_radius": {
+      "default": "rounded-sm",
+      "card": "rounded-md",
+      "button": "rounded-md"
+    },
+    "grid_strategy": "Bento Grid Mode B (High Density)",
+    "container_style": "border border-border bg-card/50 backdrop-blur-sm"
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-all",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border",
+      "destructive": "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
+    },
+    "cards": {
+      "default": "bg-card border border-border/50 shadow-sm relative overflow-hidden group",
+      "hover_effect": "group-hover:border-primary/50 transition-colors duration-300"
+    },
+    "inputs": {
+      "default": "bg-muted/50 border-input focus:border-primary focus:ring-1 focus:ring-primary font-mono text-sm"
+    },
+    "charts": {
+      "library": "recharts",
+      "theme": {
+        "tooltip_bg": "#020617",
+        "tooltip_border": "#1e293b",
+        "grid_color": "#1e293b",
+        "colors": ["#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+      }
+    },
+    "tables": {
+      "style": "dense",
+      "header": "text-xs uppercase tracking-wider text-muted-foreground bg-muted/30",
+      "row": "hover:bg-muted/50 transition-colors border-b border-border/50"
+    },
+    "toasts": {
+      "library": "sonner",
+      "style": "black"
+    }
+  },
+  "visual_assets": {
+    "images": [
+      {
+        "category": "background",
+        "usage": "Login Page Background / Hero Section",
+        "url": "https://images.unsplash.com/photo-1767477665602-ab4e96be7701?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHw0fHxjeWJlcnNlY3VyaXR5JTIwbmV0d29yayUyMGFic3RyYWN0JTIwYmFja2dyb3VuZCUyMGRhcmslMjBibHVlJTIwbmVvbiUyMGxpbmVzfGVufDB8fHx8MTc3MDQ1MzU1OXww&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract blue and black digital art pattern, evokes network security."
+      },
+      {
+        "category": "avatar",
+        "usage": "Threat Actor Profile / Anonymous User",
+        "url": "https://images.unsplash.com/photo-1647797819874-f51a8a8fc5c0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHw0fHxoYWNrZXIlMjBob29kaWUlMjBkYXJrJTIwYW5vbnltb3VzJTIwc2lsaG91ZXR0ZXxlbnwwfHx8fDE3NzA0NTM1NjF8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Person in black hoodie, silhouette."
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "preferred_icons": [
+        "ShieldAlert", "Activity", "Lock", "Unlock", "UserX", "Terminal", "Fingerprint", "Radar"
+      ]
+    }
+  },
+  "animations": {
+    "micro_interactions": "transition-all duration-200 ease-in-out",
+    "page_transition": "animate-in fade-in zoom-in-95 duration-300",
+    "alert_pulse": "animate-pulse"
+  },
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Create depth through layered design elements.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Main agent relies on these image URLs. Missing categories = main agent will use placeholder text which is FORBIDDEN.",
+    "Components MUST use named exports (export const ComponentName = ...).",
+    "All interactive elements MUST include data-testid attribute."
+  ],
+  "instructions_to_main_agent": "You are building a high-tech Security Operations Center (SOC) dashboard. The aesthetic should be serious, dark, and precise. Use the 'Bento Grid' layout for the dashboard overview. Prioritize the 'Attack Logs' table visibility. Use the provided 'Hacker' image for any visual representation of a threat actor. Ensure the 'Honeypot' configuration section looks distinct, perhaps using the Amber/Purple accent to signify 'Trap'. All charts must use the dark-mode compatible colors defined in 'components.charts.theme'."
+}
