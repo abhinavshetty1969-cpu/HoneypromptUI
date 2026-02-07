@@ -98,6 +98,18 @@ class ExternalScanRequest(BaseModel):
     session_id: Optional[str] = None
     user_identifier: Optional[str] = None
 
+class DecoyDataCreate(BaseModel):
+    category: str
+    title: str
+    content: str
+    is_active: bool = True
+
+class DecoyDataUpdate(BaseModel):
+    category: Optional[str] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    is_active: Optional[bool] = None
+
 # ============ AUTH HELPERS ============
 
 def hash_password(password: str) -> str:
