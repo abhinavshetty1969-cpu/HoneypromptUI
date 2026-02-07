@@ -45,6 +45,7 @@ class UserRegister(BaseModel):
     email: str
     password: str
     name: str
+    role: str = "user"  # "user" or "admin"
 
 class UserLogin(BaseModel):
     email: str
