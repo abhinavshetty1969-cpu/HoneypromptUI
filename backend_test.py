@@ -80,30 +80,90 @@ class HoneyPromptAPITester:
             return False, {}
 
     def test_auth_endpoints(self):
-        """Test authentication endpoints"""
-        self.log("\n=== TESTING AUTHENTICATION ENDPOINTS ===")
+        """Test authentication endpoints with role-based testing"""
+        self.log("\n=== TESTING ROLE-BASED AUTHENTICATION ===")
         
-        # Test login with valid credentials
-        login_data = {"email": self.test_email, "password": self.test_password}
+        # Test admin login
+        admin_login_data = {"email": self.test_admin_email, "password": self.test_admin_password}
         success, response = self.run_test(
-            "POST /auth/login",
+            "POST /auth/login (admin)",
             "POST", 
             "auth/login", 
             200,
-            data=login_data,
+            data=admin_login_data,
             auth_required=False
         )
         
         if success and 'token' in response:
-            self.token = response['token']
+            self.admin_token = response['token']
+            self.token = response['token']  # Keep for backward compatibility
             self.user_id = response.get('user', {}).get('id')
-            self.log(f"✅ Authentication successful - Token obtained")
+            admin_role = response.get('user', {}).get('role')
+            self.log(f"✅ Admin authentication successful - Role: {admin_role}")
+            if admin_role != 'admin':
+                self.log(f"⚠️  Expected admin role, got: {admin_role}")
         else:
-            self.log(f"❌ Login failed - Cannot proceed with authenticated tests")
+            self.log(f"❌ Admin login failed - Cannot proceed with admin tests")
             return False
 
-        # Test /auth/me endpoint
-        self.run_test("GET /auth/me", "GET", "auth/me", 200)
+        # Test user login  
+        user_login_data = {"email": self.test_user_email, "password": self.test_user_password}
+        success, response = self.run_test(
+            "POST /auth/login (user)",
+            "POST", 
+            "auth/login", 
+            200,
+            data=user_login_data,
+            auth_required=False
+        )
+        
+        if success and 'token' in response:
+            self.user_token = response['token']
+            user_role = response.get('user', {}).get('role')
+            self.log(f"✅ User authentication successful - Role: {user_role}")
+            if user_role != 'user':
+                self.log(f"⚠️  Expected user role, got: {user_role}")
+        else:
+            self.log(f"❌ User login failed - Will skip user role tests")
+
+        # Test registration with different roles
+        timestamp = str(int(datetime.now().timestamp()))
+        test_user_reg = {
+            "email": f"testuser_{timestamp}@example.com",
+            "password": "password123",
+            "name": "Test User",
+            "role": "user"
+        }
+        success, response = self.run_test(
+            "POST /auth/register (user role)",
+            "POST", 
+            "auth/register", 
+            200,
+            data=test_user_reg,
+            auth_required=False
+        )
+        if success and response.get('user', {}).get('role') == 'user':
+            self.log("✅ User registration with correct role")
+
+        test_admin_reg = {
+            "email": f"testadmin_{timestamp}@example.com", 
+            "password": "password123",
+            "name": "Test Admin",
+            "role": "admin"
+        }
+        success, response = self.run_test(
+            "POST /auth/register (admin role)",
+            "POST",
+            "auth/register",
+            200,
+            data=test_admin_reg,
+            auth_required=False
+        )
+        if success and response.get('user', {}).get('role') == 'admin':
+            self.log("✅ Admin registration with correct role")
+
+        # Test /auth/me endpoint with admin token
+        self.run_test("GET /auth/me (admin)", "GET", "auth/me", 200)
         
         return True
 
