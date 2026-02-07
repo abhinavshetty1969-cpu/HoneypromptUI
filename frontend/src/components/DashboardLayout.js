@@ -14,16 +14,19 @@ import {
 import { ScrollArea } from '../components/ui/scroll-area';
 import {
   ShieldAlert, Activity, Terminal, Users, Radar, Bell,
-  LogOut, ChevronLeft, ChevronRight, Menu, X
+  LogOut, ChevronLeft, ChevronRight, Menu, X, Fingerprint, Webhook, Key
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: Activity },
   { path: '/attacks', label: 'Attack Logs', icon: ShieldAlert },
+  { path: '/profiles', label: 'Threat Profiles', icon: Fingerprint },
   { path: '/chat', label: 'Chat Test', icon: Terminal },
   { path: '/users', label: 'Users', icon: Users },
   { path: '/honeypots', label: 'Honeypots', icon: Radar },
+  { path: '/webhooks', label: 'Webhooks', icon: Webhook },
+  { path: '/apikeys', label: 'API Keys', icon: Key },
 ];
 
 export const DashboardLayout = ({ children }) => {
