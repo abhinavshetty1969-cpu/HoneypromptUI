@@ -433,22 +433,23 @@ async def register(data: UserRegister):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    role = data.role if data.role in ["user", "admin"] else "user"
     user_id = str(uuid.uuid4())
     user_doc = {
         "id": user_id,
         "email": data.email,
         "password": hash_password(data.password),
         "name": data.name,
-        "role": "admin",
+        "role": role,
         "is_blocked": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
 
-    token = create_token(user_id, data.email, "admin")
+    token = create_token(user_id, data.email, role)
     return {
         "token": token,
-        "user": {"id": user_id, "email": data.email, "name": data.name, "role": "admin"}
+        "user": {"id": user_id, "email": data.email, "name": data.name, "role": role}
     }
 
 @api_router.post("/auth/login")
