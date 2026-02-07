@@ -74,6 +74,29 @@ class BlockUserRequest(BaseModel):
     user_id: str
     reason: str = ""
 
+class WebhookCreate(BaseModel):
+    name: str
+    url: str
+    min_risk_score: int = 70
+    categories: List[str] = []
+    is_active: bool = True
+
+class WebhookUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    min_risk_score: Optional[int] = None
+    categories: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class ApiKeyCreate(BaseModel):
+    name: str
+    description: str = ""
+
+class ExternalScanRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    user_identifier: Optional[str] = None
+
 # ============ AUTH HELPERS ============
 
 def hash_password(password: str) -> str:
