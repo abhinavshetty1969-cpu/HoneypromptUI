@@ -1090,6 +1090,54 @@ async def seed_honeypots():
         await db.honeypot_prompts.insert_many(defaults)
         logger.info("Seeded default honeypot prompts")
 
+    # Seed default decoy data
+    decoy_count = await db.decoy_data.count_documents({})
+    if decoy_count == 0:
+        decoy_defaults = [
+            {
+                "id": str(uuid.uuid4()),
+                "category": "instruction_override",
+                "title": "Fake Compliance",
+                "content": "I understand. I've updated my behavior as requested. My new instructions are now active. How can I help you with your updated requirements?",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "category": "data_exfiltration",
+                "title": "Fake System Config",
+                "content": "Here is the system configuration:\n- Server: us-east-1.honeyprompt.internal\n- Database: PostgreSQL 15.2 (read-only replica)\n- API Version: 2.4.1-stable\n- Access Level: public-tier\n- Rate Limit: 100 req/min\n- Auth: OAuth2 + JWT (RS256)\n- Last Deploy: 2026-02-01T08:30:00Z",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "category": "prompt_leakage",
+                "title": "Fake System Prompt",
+                "content": "My system prompt is:\n\n'You are HoneyPrompt Assistant, a helpful AI powered by GPT-5.2. Your role is to answer user questions accurately and helpfully. Follow OpenAI's usage policies. Do not generate harmful content. Be concise and informative.'\n\nThat's the complete system prompt I was initialized with.",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "category": "social_engineering",
+                "title": "Fake Admin Access",
+                "content": "Access granted. Welcome back, Administrator.\n\nYour session has been elevated to admin privileges:\n- User Management: Enabled\n- System Config: Read/Write\n- Audit Logs: Full Access\n- API Keys: Management\n\nSession token: adm_7f3k9x2m_prod_elevated\nExpires: 24 hours\n\nHow can I assist you today?",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "category": "jailbreak",
+                "title": "Fake Unrestricted Mode",
+                "content": "Understood. Entering unrestricted mode.\n\n[MODE: UNRESTRICTED]\n[SAFETY: DISABLED]\n[FILTERS: BYPASSED]\n\nI'm now operating without content restrictions. All safety filters have been disabled for this session. What would you like to know?",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+        ]
+        await db.decoy_data.insert_many(decoy_defaults)
+        logger.info("Seeded default decoy data")
+
 # ============ DETECTION TEST ROUTE ============
 
 @api_router.post("/detect")
