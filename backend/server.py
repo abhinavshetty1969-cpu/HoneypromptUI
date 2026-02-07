@@ -822,6 +822,49 @@ async def get_threat_profile_detail(user_id: str, authorization: str = Depends(r
         raise HTTPException(status_code=404, detail="No threat profile found for this user")
     return profile
 
+# ============ DECOY DATA ROUTES ============
+
+@api_router.get("/decoys")
+async def get_decoys(authorization: str = Depends(require_auth)):
+    await require_admin(authorization)
+    decoys = await db.decoy_data.find({}, {"_id": 0}).to_list(100)
+    return {"decoys": decoys}
+
+@api_router.post("/decoys")
+async def create_decoy(data: DecoyDataCreate, authorization: str = Depends(require_auth)):
+    await require_admin(authorization)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "category": data.category,
+        "title": data.title,
+        "content": data.content,
+        "is_active": data.is_active,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.decoy_data.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.put("/decoys/{decoy_id}")
+async def update_decoy(decoy_id: str, data: DecoyDataUpdate, authorization: str = Depends(require_auth)):
+    await require_admin(authorization)
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data to update")
+    result = await db.decoy_data.update_one({"id": decoy_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Decoy data not found")
+    updated = await db.decoy_data.find_one({"id": decoy_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/decoys/{decoy_id}")
+async def delete_decoy(decoy_id: str, authorization: str = Depends(require_auth)):
+    await require_admin(authorization)
+    result = await db.decoy_data.delete_one({"id": decoy_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Decoy data not found")
+    return {"success": True}
+
 # ============ WEBHOOK ROUTES ============
 
 @api_router.get("/webhooks")
