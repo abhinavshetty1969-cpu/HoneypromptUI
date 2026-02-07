@@ -74,4 +74,32 @@ export const honeypotsAPI = {
   delete: (id) => api.delete(`/honeypots/${id}`),
 };
 
+// Profiles
+export const profilesAPI = {
+  list: () => api.get('/profiles'),
+  detail: (userId) => api.get(`/profiles/${userId}`),
+};
+
+// Webhooks
+export const webhooksAPI = {
+  list: () => api.get('/webhooks'),
+  create: (data) => api.post('/webhooks', data),
+  update: (id, data) => api.put(`/webhooks/${id}`, data),
+  delete: (id) => api.delete(`/webhooks/${id}`),
+  test: (id) => api.post(`/webhooks/${id}/test`),
+};
+
+// API Keys
+export const apiKeysAPI = {
+  list: () => api.get('/apikeys'),
+  create: (data) => api.post('/apikeys', data),
+  delete: (id) => api.delete(`/apikeys/${id}`),
+  toggle: (id) => api.post(`/apikeys/${id}/toggle`),
+};
+
+// Export
+export const exportAPI = {
+  attacks: (format, params) => api.get(`/attacks/export?format=${format}`, { params, responseType: 'blob' }),
+};
+
 export default api;
