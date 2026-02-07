@@ -201,7 +201,7 @@ export const DashboardLayout = ({ children }) => {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 gap-2 px-2" data-testid="user-menu-button">
+                <Button variant="ghost" size="sm" className="h-8 gap-2 px-2 relative z-50" data-testid="user-menu-button">
                   <div className="w-6 h-6 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
                     <span className="text-[10px] font-bold text-primary">{user?.name?.[0]?.toUpperCase() || 'U'}</span>
                   </div>
