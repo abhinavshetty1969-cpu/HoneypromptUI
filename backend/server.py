@@ -496,6 +496,12 @@ async def chat_endpoint(data: ChatMessage, authorization: str = Depends(require_
         }
         await db.alerts.insert_one(alert)
 
+        # Update threat profile
+        await update_threat_profile(user["id"], user["email"], user.get("name", "Unknown"), analysis, data.message, session_id)
+
+        # Trigger webhooks
+        await trigger_webhooks(chat_log)
+
         return {
             "response": response_text,
             "session_id": session_id,
