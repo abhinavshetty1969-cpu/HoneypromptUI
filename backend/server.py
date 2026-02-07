@@ -269,6 +269,12 @@ async def get_api_key_record(api_key: str):
     record = await db.api_keys.find_one({"key_hash": key_hash, "is_active": True}, {"_id": 0})
     return record
 
+async def require_admin(authorization: str):
+    user = await get_current_user(authorization)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
 # ============ INJECTION DETECTION ENGINE ============
 
 ATTACK_PATTERNS = {
