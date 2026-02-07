@@ -562,7 +562,7 @@ async def export_attacks(
     min_risk: Optional[int] = None,
     authorization: str = Depends(require_auth)
 ):
-    await get_current_user(authorization)
+    await require_admin(authorization)
 
     query = {}
     if category:
