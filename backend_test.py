@@ -17,8 +17,12 @@ class HoneyPromptAPITester:
         self.failed_tests = []
         
         # Test data
-        self.test_email = "admin@honeyprompt.io"
-        self.test_password = "admin123"
+        self.test_admin_email = "admin@honeyprompt.io"
+        self.test_admin_password = "admin123"
+        self.test_user_email = "testuser2@example.com"
+        self.test_user_password = "user123"
+        self.admin_token = None
+        self.user_token = None
 
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
