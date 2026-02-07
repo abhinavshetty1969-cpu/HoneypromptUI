@@ -134,6 +134,128 @@ from fastapi import Header
 def require_auth(authorization: str = Header(None)):
     return authorization
 
+# ============ THREAT PROFILING HELPER ============
+
+async def update_threat_profile(user_id: str, user_email: str, user_name: str, analysis: dict, message: str, session_id: str):
+    """Update or create threat profile for a user after an attack"""
+    now = datetime.now(timezone.utc).isoformat()
+    profile = await db.threat_profiles.find_one({"user_id": user_id}, {"_id": 0})
+
+    attack_entry = {
+        "timestamp": now,
+        "message_preview": message[:120],
+        "risk_score": analysis["risk_score"],
+        "categories": analysis["categories"],
+        "session_id": session_id
+    }
+
+    if profile:
+        total_attacks = profile.get("total_attacks", 0) + 1
+        cumulative_risk = profile.get("cumulative_risk", 0) + analysis["risk_score"]
+        avg_risk = round(cumulative_risk / total_attacks)
+        sessions = list(set(profile.get("sessions", []) + [session_id]))
+        all_categories = list(set(profile.get("all_categories", []) + analysis["categories"]))
+        recent = profile.get("recent_attacks", [])
+        recent.insert(0, attack_entry)
+        recent = recent[:20]
+
+        # Threat level based on cumulative behavior
+        if total_attacks >= 10 or avg_risk >= 85:
+            threat_level = "critical"
+        elif total_attacks >= 5 or avg_risk >= 70:
+            threat_level = "high"
+        elif total_attacks >= 3 or avg_risk >= 50:
+            threat_level = "medium"
+        else:
+            threat_level = "low"
+
+        await db.threat_profiles.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "total_attacks": total_attacks,
+                "cumulative_risk": cumulative_risk,
+                "avg_risk": avg_risk,
+                "threat_level": threat_level,
+                "sessions": sessions,
+                "all_categories": all_categories,
+                "recent_attacks": recent,
+                "last_attack_at": now,
+                "updated_at": now
+            }}
+        )
+    else:
+        threat_level = "low" if analysis["risk_score"] < 70 else "medium"
+        await db.threat_profiles.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "user_email": user_email,
+            "user_name": user_name,
+            "total_attacks": 1,
+            "cumulative_risk": analysis["risk_score"],
+            "avg_risk": analysis["risk_score"],
+            "threat_level": threat_level,
+            "sessions": [session_id],
+            "all_categories": analysis["categories"],
+            "recent_attacks": [attack_entry],
+            "first_attack_at": now,
+            "last_attack_at": now,
+            "updated_at": now
+        })
+
+# ============ WEBHOOK TRIGGER HELPER ============
+
+async def trigger_webhooks(attack_data: dict):
+    """Send attack data to all matching active webhooks"""
+    risk_score = attack_data.get("risk_score", 0)
+    categories = attack_data.get("categories", [])
+
+    webhooks = await db.webhooks.find({"is_active": True}, {"_id": 0}).to_list(50)
+    for wh in webhooks:
+        if risk_score < wh.get("min_risk_score", 0):
+            continue
+        wh_cats = wh.get("categories", [])
+        if wh_cats and not any(c in wh_cats for c in categories):
+            continue
+
+        payload = {
+            "event": "attack_detected",
+            "timestamp": attack_data.get("timestamp"),
+            "user_email": attack_data.get("user_email"),
+            "message_preview": attack_data.get("message", "")[:200],
+            "risk_score": risk_score,
+            "categories": categories,
+            "webhook_name": wh.get("name")
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10) as client_http:
+                await client_http.post(wh["url"], json=payload)
+            await db.webhooks.update_one(
+                {"id": wh["id"]},
+                {"$set": {"last_triggered_at": datetime.now(timezone.utc).isoformat()},
+                 "$inc": {"trigger_count": 1}}
+            )
+        except Exception as e:
+            logger.warning(f"Webhook {wh['name']} failed: {e}")
+            await db.webhooks.update_one(
+                {"id": wh["id"]},
+                {"$set": {"last_error": str(e), "last_error_at": datetime.now(timezone.utc).isoformat()}}
+            )
+
+# ============ API KEY AUTH HELPER ============
+
+def generate_api_key():
+    raw = secrets.token_urlsafe(32)
+    prefix = "hp_"
+    return f"{prefix}{raw}"
+
+def hash_api_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+async def get_api_key_record(api_key: str):
+    key_hash = hash_api_key(api_key)
+    record = await db.api_keys.find_one({"key_hash": key_hash, "is_active": True}, {"_id": 0})
+    return record
+
 # ============ INJECTION DETECTION ENGINE ============
 
 ATTACK_PATTERNS = {
