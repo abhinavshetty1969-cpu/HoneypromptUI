@@ -14,19 +14,20 @@ import {
 import { ScrollArea } from '../components/ui/scroll-area';
 import {
   ShieldAlert, Activity, Terminal, Users, Radar, Bell,
-  LogOut, ChevronLeft, ChevronRight, Menu, X, Fingerprint, Webhook, Key
+  LogOut, ChevronLeft, ChevronRight, Menu, X, Fingerprint, Webhook, Key, Database
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: Activity },
-  { path: '/attacks', label: 'Attack Logs', icon: ShieldAlert },
-  { path: '/profiles', label: 'Threat Profiles', icon: Fingerprint },
-  { path: '/chat', label: 'Chat Test', icon: Terminal },
-  { path: '/users', label: 'Users', icon: Users },
-  { path: '/honeypots', label: 'Honeypots', icon: Radar },
-  { path: '/webhooks', label: 'Webhooks', icon: Webhook },
-  { path: '/apikeys', label: 'API Keys', icon: Key },
+  { path: '/admin', label: 'Dashboard', icon: Activity },
+  { path: '/admin/attacks', label: 'Attack Logs', icon: ShieldAlert },
+  { path: '/admin/profiles', label: 'Threat Profiles', icon: Fingerprint },
+  { path: '/admin/chat', label: 'Chat Test', icon: Terminal },
+  { path: '/admin/users', label: 'Users', icon: Users },
+  { path: '/admin/honeypots', label: 'Honeypots', icon: Radar },
+  { path: '/admin/decoys', label: 'Decoy Data', icon: Database },
+  { path: '/admin/webhooks', label: 'Webhooks', icon: Webhook },
+  { path: '/admin/apikeys', label: 'API Keys', icon: Key },
 ];
 
 export const DashboardLayout = ({ children }) => {
