@@ -398,6 +398,30 @@ class HoneyPromptAPITester:
             else:
                 self.log("⚠️  Response might be hardcoded fallback")
 
+    def test_threat_profiles(self):
+        """Test threat profile endpoints"""
+        self.log("\n=== TESTING THREAT PROFILES ===")
+        
+        # List threat profiles
+        success, response = self.run_test("GET /profiles", "GET", "profiles", 200)
+        if success:
+            profiles_count = len(response.get('profiles', []))
+            self.log(f"Found {profiles_count} threat profiles")
+            
+            # If profiles exist, test detail endpoint
+            if profiles_count > 0:
+                first_profile = response['profiles'][0]
+                user_id = first_profile.get('user_id')
+                if user_id:
+                    self.run_test("GET /profiles/{user_id}", "GET", f"profiles/{user_id}", 200)
+
+        # Test user access to profiles (should be 403)
+        if self.user_token:
+            original_token = self.token
+            self.token = self.user_token
+            self.run_test("GET /profiles (user - should fail)", "GET", "profiles", 403)
+            self.token = original_token
+
     def test_export_functionality(self):
         """Test attack log export endpoints (NEW FEATURE)"""
         self.log("\n=== TESTING EXPORT FUNCTIONALITY ===")
