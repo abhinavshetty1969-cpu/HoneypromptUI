@@ -247,8 +247,15 @@ class HoneyPromptAPITester:
         """Test attack logs endpoints"""
         self.log("\n=== TESTING ATTACK LOGS ===")
         
-        self.run_test("GET /attacks", "GET", "attacks", 200)
-        self.run_test("GET /attacks (with params)", "GET", "attacks?limit=10&skip=0", 200)
+        self.run_test("GET /attacks (admin)", "GET", "attacks", 200)
+        self.run_test("GET /attacks with params (admin)", "GET", "attacks?limit=10&skip=0", 200)
+        
+        # Test user access (should be 403)
+        if self.user_token:
+            original_token = self.token
+            self.token = self.user_token
+            self.run_test("GET /attacks (user - should fail)", "GET", "attacks", 403)
+            self.token = original_token
 
     def test_alerts_endpoints(self):
         """Test alerts management"""
