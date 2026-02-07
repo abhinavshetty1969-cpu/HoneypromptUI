@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   }, []);
 
-  const register = useCallback(async (email, password, name) => {
-    const res = await authAPI.register({ email, password, name });
+  const register = useCallback(async (email, password, name, role = 'user') => {
+    const res = await authAPI.register({ email, password, name, role });
     localStorage.setItem('honeyprompt_token', res.data.token);
     localStorage.setItem('honeyprompt_user', JSON.stringify(res.data.user));
     setUser(res.data.user);
