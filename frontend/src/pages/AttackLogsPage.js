@@ -103,6 +103,12 @@ export default function AttackLogsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => handleExport('csv')} className="h-9 border-border/50 text-xs" data-testid="export-csv-button">
+            <Download className="w-3.5 h-3.5 mr-1" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport('json')} className="h-9 border-border/50 text-xs" data-testid="export-json-button">
+            <Download className="w-3.5 h-3.5 mr-1" /> JSON
+          </Button>
         </div>
       </div>
 
