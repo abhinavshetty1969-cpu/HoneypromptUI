@@ -610,7 +610,7 @@ async def get_attacks(
     skip: int = 0,
     authorization: str = Depends(require_auth)
 ):
-    await get_current_user(authorization)
+    await require_admin(authorization)
 
     query = {}
     if category:
@@ -627,7 +627,7 @@ async def get_attacks(
 
 @api_router.get("/attacks/{attack_id}")
 async def get_attack_detail(attack_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     attack = await db.attack_logs.find_one({"id": attack_id}, {"_id": 0})
     if not attack:
         raise HTTPException(status_code=404, detail="Attack not found")
@@ -637,7 +637,7 @@ async def get_attack_detail(attack_id: str, authorization: str = Depends(require
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
 
     total_attacks = await db.attack_logs.count_documents({})
     total_chats = await db.chat_logs.count_documents({})
@@ -706,7 +706,7 @@ async def get_dashboard_stats(authorization: str = Depends(require_auth)):
 
 @api_router.get("/alerts")
 async def get_alerts(unread_only: bool = False, limit: int = 20, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
 
     query = {}
     if unread_only:
@@ -718,13 +718,13 @@ async def get_alerts(unread_only: bool = False, limit: int = 20, authorization: 
 
 @api_router.post("/alerts/{alert_id}/read")
 async def mark_alert_read(alert_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     await db.alerts.update_one({"id": alert_id}, {"$set": {"is_read": True}})
     return {"success": True}
 
 @api_router.post("/alerts/read-all")
 async def mark_all_alerts_read(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     await db.alerts.update_many({"is_read": False}, {"$set": {"is_read": True}})
     return {"success": True}
 
@@ -732,13 +732,13 @@ async def mark_all_alerts_read(authorization: str = Depends(require_auth)):
 
 @api_router.get("/users")
 async def get_users(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(100)
     return {"users": users}
 
 @api_router.post("/users/block")
 async def block_user(data: BlockUserRequest, authorization: str = Depends(require_auth)):
-    admin = await get_current_user(authorization)
+    admin = await require_admin(authorization)
     if admin["id"] == data.user_id:
         raise HTTPException(status_code=400, detail="Cannot block yourself")
 
@@ -752,7 +752,7 @@ async def block_user(data: BlockUserRequest, authorization: str = Depends(requir
 
 @api_router.post("/users/{user_id}/unblock")
 async def unblock_user(user_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     result = await db.users.update_one(
         {"id": user_id},
         {"$set": {"is_blocked": False}, "$unset": {"block_reason": "", "blocked_at": ""}}
@@ -765,13 +765,13 @@ async def unblock_user(user_id: str, authorization: str = Depends(require_auth))
 
 @api_router.get("/honeypots")
 async def get_honeypots(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     honeypots = await db.honeypot_prompts.find({}, {"_id": 0}).to_list(100)
     return {"honeypots": honeypots}
 
 @api_router.post("/honeypots")
 async def create_honeypot(data: HoneypotPromptCreate, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     doc = {
         "id": str(uuid.uuid4()),
         "name": data.name,
@@ -786,7 +786,7 @@ async def create_honeypot(data: HoneypotPromptCreate, authorization: str = Depen
 
 @api_router.put("/honeypots/{honeypot_id}")
 async def update_honeypot(honeypot_id: str, data: HoneypotPromptUpdate, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
@@ -800,7 +800,7 @@ async def update_honeypot(honeypot_id: str, data: HoneypotPromptUpdate, authoriz
 
 @api_router.delete("/honeypots/{honeypot_id}")
 async def delete_honeypot(honeypot_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     result = await db.honeypot_prompts.delete_one({"id": honeypot_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Honeypot not found")
@@ -810,13 +810,13 @@ async def delete_honeypot(honeypot_id: str, authorization: str = Depends(require
 
 @api_router.get("/profiles")
 async def get_threat_profiles(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     profiles = await db.threat_profiles.find({}, {"_id": 0}).sort("avg_risk", -1).to_list(100)
     return {"profiles": profiles}
 
 @api_router.get("/profiles/{user_id}")
 async def get_threat_profile_detail(user_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     profile = await db.threat_profiles.find_one({"user_id": user_id}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=404, detail="No threat profile found for this user")
@@ -826,13 +826,13 @@ async def get_threat_profile_detail(user_id: str, authorization: str = Depends(r
 
 @api_router.get("/webhooks")
 async def get_webhooks(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     webhooks = await db.webhooks.find({}, {"_id": 0}).to_list(50)
     return {"webhooks": webhooks}
 
 @api_router.post("/webhooks")
 async def create_webhook(data: WebhookCreate, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     doc = {
         "id": str(uuid.uuid4()),
         "name": data.name,
@@ -849,7 +849,7 @@ async def create_webhook(data: WebhookCreate, authorization: str = Depends(requi
 
 @api_router.put("/webhooks/{webhook_id}")
 async def update_webhook(webhook_id: str, data: WebhookUpdate, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
@@ -861,7 +861,7 @@ async def update_webhook(webhook_id: str, data: WebhookUpdate, authorization: st
 
 @api_router.delete("/webhooks/{webhook_id}")
 async def delete_webhook(webhook_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     result = await db.webhooks.delete_one({"id": webhook_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Webhook not found")
@@ -869,7 +869,7 @@ async def delete_webhook(webhook_id: str, authorization: str = Depends(require_a
 
 @api_router.post("/webhooks/{webhook_id}/test")
 async def test_webhook(webhook_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     wh = await db.webhooks.find_one({"id": webhook_id}, {"_id": 0})
     if not wh:
         raise HTTPException(status_code=404, detail="Webhook not found")
@@ -891,13 +891,13 @@ async def test_webhook(webhook_id: str, authorization: str = Depends(require_aut
 
 @api_router.get("/apikeys")
 async def get_api_keys(authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     keys = await db.api_keys.find({}, {"_id": 0, "key_hash": 0}).to_list(50)
     return {"api_keys": keys}
 
 @api_router.post("/apikeys")
 async def create_api_key(data: ApiKeyCreate, authorization: str = Depends(require_auth)):
-    user = await get_current_user(authorization)
+    user = await require_admin(authorization)
     raw_key = generate_api_key()
     doc = {
         "id": str(uuid.uuid4()),
@@ -924,7 +924,7 @@ async def create_api_key(data: ApiKeyCreate, authorization: str = Depends(requir
 
 @api_router.delete("/apikeys/{key_id}")
 async def revoke_api_key(key_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     result = await db.api_keys.delete_one({"id": key_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="API key not found")
@@ -932,7 +932,7 @@ async def revoke_api_key(key_id: str, authorization: str = Depends(require_auth)
 
 @api_router.post("/apikeys/{key_id}/toggle")
 async def toggle_api_key(key_id: str, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     key_rec = await db.api_keys.find_one({"id": key_id}, {"_id": 0})
     if not key_rec:
         raise HTTPException(status_code=404, detail="API key not found")
@@ -999,7 +999,7 @@ async def external_scan(data: ExternalScanRequest, x_api_key: str = Header(None,
 
 @api_router.get("/external/scans")
 async def get_external_scans(limit: int = 50, authorization: str = Depends(require_auth)):
-    await get_current_user(authorization)
+    await require_admin(authorization)
     scans = await db.external_scans.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     total = await db.external_scans.count_documents({})
     return {"scans": scans, "total": total}
