@@ -540,11 +540,17 @@ class HoneyPromptAPITester:
             
         self.test_detection_endpoint()
         self.test_chat_endpoint()
+        self.test_decoy_data_management()
+        self.test_chat_with_decoy_integration()
         self.test_dashboard_stats()
         self.test_attack_logs()
         self.test_alerts_endpoints()
         self.test_user_management()
         self.test_honeypot_management()
+        self.test_threat_profiles()
+        self.test_export_functionality()
+        self.test_webhooks_management()
+        self.test_api_keys_management()
         
         # Summary
         end_time = time.time()
