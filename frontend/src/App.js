@@ -40,6 +40,9 @@ function App() {
           <Route path="/chat" element={<ProtectedRoute><ChatTestPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><UserManagementPage /></ProtectedRoute>} />
           <Route path="/honeypots" element={<ProtectedRoute><HoneypotSettingsPage /></ProtectedRoute>} />
+          <Route path="/profiles" element={<ProtectedRoute><ThreatProfilesPage /></ProtectedRoute>} />
+          <Route path="/webhooks" element={<ProtectedRoute><WebhooksPage /></ProtectedRoute>} />
+          <Route path="/apikeys" element={<ProtectedRoute><ApiKeysPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
