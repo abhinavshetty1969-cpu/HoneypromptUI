@@ -983,7 +983,7 @@ async def external_scan(data: ExternalScanRequest, x_api_key: str = Header(None,
             "user_id": f"ext_{key_record['id']}",
             "user_email": f"api:{key_record.get('name', 'external')}",
             "user_name": key_record.get("name", "External App"),
-            "response": FAKE_RESPONSES.get(analysis["categories"][0] if analysis["categories"] else "instruction_override", ""),
+            "response": await get_fake_response(analysis["categories"][0] if analysis["categories"] else "instruction_override"),
             "response_type": "honeypot"
         }
         await db.attack_logs.insert_one(attack_log)
