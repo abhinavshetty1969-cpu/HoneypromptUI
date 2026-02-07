@@ -99,9 +99,10 @@ async def get_current_user(token: str = None):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-def require_auth(authorization: str = None):
-    from fastapi import Header
-    return Header(None, alias="Authorization")
+from fastapi import Header
+
+def require_auth(authorization: str = Header(None)):
+    return authorization
 
 # ============ INJECTION DETECTION ENGINE ============
 
