@@ -5,7 +5,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ShieldAlert, Eye, EyeOff, User, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('user');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -20,9 +22,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      const data = await login(email, password);
       toast.success('Authenticated successfully');
-      navigate('/');
+      if (data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed');
     } finally {
@@ -45,7 +51,28 @@ export default function LoginPage() {
             <CardDescription className="text-muted-foreground mt-1">AI Security Middleware</CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-5">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+              <TabsTrigger value="user" className="flex items-center gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-user-login">
+                <User className="w-3.5 h-3.5" /> User
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="flex items-center gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive" data-testid="tab-admin-login">
+                <Lock className="w-3.5 h-3.5" /> Admin
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className={`text-center mb-4 text-xs font-mono px-3 py-2 rounded-md ${
+            activeTab === 'admin'
+              ? 'bg-destructive/5 border border-destructive/20 text-destructive'
+              : 'bg-primary/5 border border-primary/20 text-primary'
+          }`}>
+            {activeTab === 'admin'
+              ? 'Admin: Full dashboard access, security analytics, user management'
+              : 'User: Chat with the AI assistant'}
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Email</Label>
@@ -55,7 +82,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@honeyprompt.io"
+                placeholder={activeTab === 'admin' ? 'admin@honeyprompt.io' : 'user@example.com'}
                 className="bg-muted/50 border-input focus:border-primary font-mono text-sm h-11"
                 required
               />
@@ -87,9 +114,13 @@ export default function LoginPage() {
               type="submit"
               data-testid="login-submit-button"
               disabled={loading}
-              className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(6,182,212,0.3)] font-semibold"
+              className={`w-full h-11 font-semibold ${
+                activeTab === 'admin'
+                  ? 'bg-destructive/80 text-destructive-foreground hover:bg-destructive/70 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+              }`}
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? 'Authenticating...' : activeTab === 'admin' ? 'Sign In as Admin' : 'Sign In'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-6">
