@@ -234,7 +234,14 @@ class HoneyPromptAPITester:
         """Test dashboard statistics"""
         self.log("\n=== TESTING DASHBOARD ENDPOINTS ===")
         
-        self.run_test("GET /dashboard/stats", "GET", "dashboard/stats", 200)
+        self.run_test("GET /dashboard/stats (admin)", "GET", "dashboard/stats", 200)
+        
+        # Test user access (should be 403)
+        if self.user_token:
+            original_token = self.token
+            self.token = self.user_token
+            self.run_test("GET /dashboard/stats (user - should fail)", "GET", "dashboard/stats", 403)
+            self.token = original_token
 
     def test_attack_logs(self):
         """Test attack logs endpoints"""
