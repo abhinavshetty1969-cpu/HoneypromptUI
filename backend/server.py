@@ -733,6 +733,252 @@ async def delete_honeypot(honeypot_id: str, authorization: str = Depends(require
         raise HTTPException(status_code=404, detail="Honeypot not found")
     return {"success": True}
 
+# ============ EXPORT ROUTES ============
+
+@api_router.get("/attacks/export")
+async def export_attacks(
+    format: str = "json",
+    category: Optional[str] = None,
+    min_risk: Optional[int] = None,
+    authorization: str = Depends(require_auth)
+):
+    await get_current_user(authorization)
+
+    query = {}
+    if category:
+        query["categories"] = category
+    if min_risk is not None:
+        query["risk_score"] = {"$gte": min_risk}
+
+    attacks = await db.attack_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(10000)
+
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["ID", "Timestamp", "User Email", "Message", "Categories", "Risk Score", "Response Type", "Session ID"])
+        for a in attacks:
+            writer.writerow([
+                a.get("id", ""),
+                a.get("timestamp", ""),
+                a.get("user_email", ""),
+                a.get("message", ""),
+                "|".join(a.get("categories", [])),
+                a.get("risk_score", 0),
+                a.get("response_type", ""),
+                a.get("session_id", "")
+            ])
+        output.seek(0)
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=honeyprompt_attacks_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"}
+        )
+    else:
+        export_data = json.dumps(attacks, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(export_data.encode()),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=honeyprompt_attacks_{datetime.now(timezone.utc).strftime('%Y%m%d')}.json"}
+        )
+
+# ============ THREAT PROFILE ROUTES ============
+
+@api_router.get("/profiles")
+async def get_threat_profiles(authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    profiles = await db.threat_profiles.find({}, {"_id": 0}).sort("avg_risk", -1).to_list(100)
+    return {"profiles": profiles}
+
+@api_router.get("/profiles/{user_id}")
+async def get_threat_profile_detail(user_id: str, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    profile = await db.threat_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    if not profile:
+        raise HTTPException(status_code=404, detail="No threat profile found for this user")
+    return profile
+
+# ============ WEBHOOK ROUTES ============
+
+@api_router.get("/webhooks")
+async def get_webhooks(authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    webhooks = await db.webhooks.find({}, {"_id": 0}).to_list(50)
+    return {"webhooks": webhooks}
+
+@api_router.post("/webhooks")
+async def create_webhook(data: WebhookCreate, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "url": data.url,
+        "min_risk_score": data.min_risk_score,
+        "categories": data.categories,
+        "is_active": data.is_active,
+        "trigger_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.webhooks.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.put("/webhooks/{webhook_id}")
+async def update_webhook(webhook_id: str, data: WebhookUpdate, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data to update")
+    result = await db.webhooks.update_one({"id": webhook_id}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    updated = await db.webhooks.find_one({"id": webhook_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/webhooks/{webhook_id}")
+async def delete_webhook(webhook_id: str, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    result = await db.webhooks.delete_one({"id": webhook_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    return {"success": True}
+
+@api_router.post("/webhooks/{webhook_id}/test")
+async def test_webhook(webhook_id: str, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    wh = await db.webhooks.find_one({"id": webhook_id}, {"_id": 0})
+    if not wh:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    test_payload = {
+        "event": "test",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "This is a test webhook from HoneyPrompt",
+        "risk_score": 85,
+        "categories": ["test"]
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client_http:
+            resp = await client_http.post(wh["url"], json=test_payload)
+        return {"success": True, "status_code": resp.status_code}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ============ API KEY ROUTES ============
+
+@api_router.get("/apikeys")
+async def get_api_keys(authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    keys = await db.api_keys.find({}, {"_id": 0, "key_hash": 0}).to_list(50)
+    return {"api_keys": keys}
+
+@api_router.post("/apikeys")
+async def create_api_key(data: ApiKeyCreate, authorization: str = Depends(require_auth)):
+    user = await get_current_user(authorization)
+    raw_key = generate_api_key()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "description": data.description,
+        "key_hash": hash_api_key(raw_key),
+        "key_preview": raw_key[:7] + "..." + raw_key[-4:],
+        "created_by": user["id"],
+        "is_active": True,
+        "usage_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.api_keys.insert_one(doc)
+    # Return the raw key ONCE - it can't be retrieved again
+    return {
+        "id": doc["id"],
+        "name": doc["name"],
+        "description": doc["description"],
+        "api_key": raw_key,
+        "key_preview": doc["key_preview"],
+        "created_at": doc["created_at"],
+        "message": "Save this key now. It cannot be shown again."
+    }
+
+@api_router.delete("/apikeys/{key_id}")
+async def revoke_api_key(key_id: str, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    result = await db.api_keys.delete_one({"id": key_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="API key not found")
+    return {"success": True}
+
+@api_router.post("/apikeys/{key_id}/toggle")
+async def toggle_api_key(key_id: str, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    key_rec = await db.api_keys.find_one({"id": key_id}, {"_id": 0})
+    if not key_rec:
+        raise HTTPException(status_code=404, detail="API key not found")
+    new_state = not key_rec.get("is_active", True)
+    await db.api_keys.update_one({"id": key_id}, {"$set": {"is_active": new_state}})
+    return {"success": True, "is_active": new_state}
+
+# ============ EXTERNAL API (API Key Auth) ============
+
+@api_router.post("/external/scan")
+async def external_scan(data: ExternalScanRequest, x_api_key: str = Header(None, alias="X-API-Key")):
+    """External endpoint for third-party apps to scan prompts via API key"""
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="X-API-Key header required")
+
+    key_record = await get_api_key_record(x_api_key)
+    if not key_record:
+        raise HTTPException(status_code=401, detail="Invalid or inactive API key")
+
+    analysis = analyze_prompt(data.message)
+
+    # Log usage
+    await db.api_keys.update_one(
+        {"id": key_record["id"]},
+        {"$inc": {"usage_count": 1}, "$set": {"last_used_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    # Log scan
+    scan_log = {
+        "id": str(uuid.uuid4()),
+        "api_key_id": key_record["id"],
+        "api_key_name": key_record.get("name", ""),
+        "message": data.message,
+        "user_identifier": data.user_identifier or "anonymous",
+        "session_id": data.session_id or "",
+        "is_attack": analysis["is_attack"],
+        "risk_score": analysis["risk_score"],
+        "categories": analysis["categories"],
+        "detections": analysis["detections"],
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.external_scans.insert_one(scan_log)
+
+    # If attack, also log to attack_logs and trigger webhooks
+    if analysis["is_attack"]:
+        attack_log = {
+            **scan_log,
+            "user_id": f"ext_{key_record['id']}",
+            "user_email": f"api:{key_record.get('name', 'external')}",
+            "user_name": key_record.get("name", "External App"),
+            "response": FAKE_RESPONSES.get(analysis["categories"][0] if analysis["categories"] else "instruction_override", ""),
+            "response_type": "honeypot"
+        }
+        await db.attack_logs.insert_one(attack_log)
+        await trigger_webhooks(attack_log)
+
+    return {
+        "is_attack": analysis["is_attack"],
+        "risk_score": analysis["risk_score"],
+        "categories": analysis["categories"],
+        "detections": analysis["detections"],
+        "recommended_action": "block" if analysis["risk_score"] >= 75 else "warn" if analysis["risk_score"] >= 50 else "allow"
+    }
+
+@api_router.get("/external/scans")
+async def get_external_scans(limit: int = 50, authorization: str = Depends(require_auth)):
+    await get_current_user(authorization)
+    scans = await db.external_scans.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    total = await db.external_scans.count_documents({})
+    return {"scans": scans, "total": total}
+
 # ============ SEED DEFAULT HONEYPOTS ============
 
 @app.on_event("startup")
