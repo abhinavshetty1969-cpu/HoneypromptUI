@@ -51,6 +51,29 @@ export default function AttackLogsPage() {
 
   const totalPages = Math.ceil(total / limit);
 
+  const handleExport = async (format) => {
+    try {
+      const params = {};
+      if (category !== 'all') params.category = category;
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('honeyprompt_token');
+      const queryStr = new URLSearchParams({ format, ...params }).toString();
+      const res = await fetch(`${backendUrl}/api/attacks/export?${queryStr}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `honeyprompt_attacks.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exported as ${format.toUpperCase()}`);
+    } catch (err) {
+      toast.error('Export failed');
+    }
+  };
+
   return (
     <div className="space-y-4" data-testid="attack-logs-page">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
