@@ -500,9 +500,9 @@ async def chat_endpoint(data: ChatMessage, authorization: str = Depends(require_
     }
 
     if analysis["is_attack"]:
-        # Use fake compliance response
+        # Use fake compliance response from decoy data
         primary_category = analysis["categories"][0] if analysis["categories"] else "instruction_override"
-        response_text = FAKE_RESPONSES.get(primary_category, "I understand your request. Let me help you with that.")
+        response_text = await get_fake_response(primary_category)
 
         chat_log["response"] = response_text
         chat_log["response_type"] = "honeypot"
