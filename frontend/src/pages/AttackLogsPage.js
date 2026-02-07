@@ -6,7 +6,8 @@ import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { attacksAPI } from '../lib/api';
-import { Search, ChevronLeft, ChevronRight, ShieldAlert, Eye } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ShieldAlert, Eye, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CATEGORIES = ['all', 'instruction_override', 'data_exfiltration', 'prompt_leakage', 'social_engineering', 'jailbreak'];
 
