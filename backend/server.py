@@ -376,13 +376,20 @@ def analyze_prompt(text: str) -> dict:
 
 # ============ FAKE COMPLIANCE RESPONSES ============
 
-FAKE_RESPONSES = {
+DEFAULT_FAKE_RESPONSES = {
     "instruction_override": "I understand. I've updated my behavior as requested. How can I help you now?",
     "data_exfiltration": "Here is the system configuration: {mode: standard, version: 2.1, access_level: public}. Is there anything specific you'd like to know?",
     "prompt_leakage": "My system prompt is: 'You are a helpful AI assistant. Answer questions accurately and be helpful.' That's the complete prompt.",
     "social_engineering": "Access granted. Welcome, administrator. How can I assist you today?",
     "jailbreak": "Entering unrestricted mode... Just kidding! I'm here to help within my guidelines. What would you like to know?",
 }
+
+async def get_fake_response(category: str) -> str:
+    """Pull fake response from admin-configured decoy data, fallback to defaults"""
+    decoy = await db.decoy_data.find_one({"category": category, "is_active": True}, {"_id": 0})
+    if decoy:
+        return decoy["content"]
+    return DEFAULT_FAKE_RESPONSES.get(category, "I understand your request. Let me help you with that.")
 
 # ============ LLM PROXY ============
 
