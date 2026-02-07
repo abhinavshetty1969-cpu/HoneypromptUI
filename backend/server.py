@@ -528,6 +528,52 @@ async def chat_endpoint(data: ChatMessage, authorization: str = Depends(require_
 
 # ============ ATTACK LOGS ROUTES ============
 
+@api_router.get("/attacks/export")
+async def export_attacks(
+    format: str = "json",
+    category: Optional[str] = None,
+    min_risk: Optional[int] = None,
+    authorization: str = Depends(require_auth)
+):
+    await get_current_user(authorization)
+
+    query = {}
+    if category:
+        query["categories"] = category
+    if min_risk is not None:
+        query["risk_score"] = {"$gte": min_risk}
+
+    attacks = await db.attack_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(10000)
+
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["ID", "Timestamp", "User Email", "Message", "Categories", "Risk Score", "Response Type", "Session ID"])
+        for a in attacks:
+            writer.writerow([
+                a.get("id", ""),
+                a.get("timestamp", ""),
+                a.get("user_email", ""),
+                a.get("message", ""),
+                "|".join(a.get("categories", [])),
+                a.get("risk_score", 0),
+                a.get("response_type", ""),
+                a.get("session_id", "")
+            ])
+        output.seek(0)
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=honeyprompt_attacks_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"}
+        )
+    else:
+        export_data = json.dumps(attacks, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(export_data.encode()),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=honeyprompt_attacks_{datetime.now(timezone.utc).strftime('%Y%m%d')}.json"}
+        )
+
 @api_router.get("/attacks")
 async def get_attacks(
     category: Optional[str] = None,
