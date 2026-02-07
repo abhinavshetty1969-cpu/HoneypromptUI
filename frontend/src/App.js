@@ -10,6 +10,9 @@ import AttackLogsPage from './pages/AttackLogsPage';
 import ChatTestPage from './pages/ChatTestPage';
 import UserManagementPage from './pages/UserManagementPage';
 import HoneypotSettingsPage from './pages/HoneypotSettingsPage';
+import ThreatProfilesPage from './pages/ThreatProfilesPage';
+import WebhooksPage from './pages/WebhooksPage';
+import ApiKeysPage from './pages/ApiKeysPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
